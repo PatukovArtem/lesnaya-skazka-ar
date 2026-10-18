@@ -1,6 +1,6 @@
 import './styles.css';
 
-const markerUrl = '/markers/forest-guardian.svg';
+const markerUrl = '/markers/baba-yaga-zimnyaya-izba.png';
 let THREE = null;
 
 const state = {
@@ -33,7 +33,7 @@ app.innerHTML = `
         <ol class="steps">
           <li>
             <span>01</span>
-            <div><strong>Откройте иллюстрацию</strong><p>Для проверки можно <a href="${markerUrl}" target="_blank" rel="noreferrer">показать тестовый маркер</a> на другом экране или распечатать его.</p></div>
+            <div><strong>Откройте иллюстрацию</strong><p>Для проверки можно <a href="${markerUrl}" target="_blank" rel="noreferrer">открыть картинку Бабы Яги</a> на другом экране или распечатать её.</p></div>
           </li>
           <li>
             <span>02</span>
@@ -44,6 +44,12 @@ app.innerHTML = `
             <div><strong>Наведите на картинку</strong><p>Держите изображение внутри рамки — приложение узнает его и запустит анимацию.</p></div>
           </li>
         </ol>
+      </section>
+      <section class="test-scene" aria-labelledby="test-scene-title">
+        <p class="eyebrow">Пробник распознавания</p>
+        <h2 id="test-scene-title">Баба Яга у зимней избы</h2>
+        <p>На заснеженной опушке Баба Яга прислушивается к лесу. Метла уже чувствует, куда приведёт следующая тропинка, — осталось лишь навести на иллюстрацию камеру.</p>
+        <a class="test-scene__link" href="${markerUrl}" target="_blank" rel="noreferrer">Открыть картинку для распознавания ↗</a>
       </section>
       <p class="privacy-note">Видеопоток не сохраняется и используется только для распознавания изображения.</p>
     </section>
