@@ -1,6 +1,7 @@
 import './styles.css';
 
 const markerUrl = '/markers/baba-yaga-zimnyaya-izba.png';
+const babaYagaVideoUrl = '/media/baba-yaga-wave.mp4';
 const markerMaxDimension = 640;
 let THREE = null;
 
@@ -58,6 +59,11 @@ app.innerHTML = `
         </header>
         <p class="scan-prompt" id="scan-prompt">Подготовка камеры…</p>
         <div class="scan-frame" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+        <section class="character-info" id="character-info" aria-live="polite" hidden>
+          <p class="character-info__eyebrow">Лесная сказка</p>
+          <h2>Баба Яга</h2>
+          <p>Хранительница лесных троп приветствует гостей. Её взмах руки означает: вы выбрали верный путь.</p>
+        </section>
         <p class="ar-disclaimer" id="ar-disclaimer">Камера используется только для распознавания иллюстрации</p>
       </div>
     </section>
@@ -126,43 +132,50 @@ async function requestMaxCameraPermission() {
   }
 }
 
-function createMagic(anchorGroup) {
-  const magic = new THREE.Group();
-  const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.14, 0.17, 48),
-    new THREE.MeshBasicMaterial({ color: 0xf2ddbd, transparent: true, opacity: 0.86, side: THREE.DoubleSide }),
+function createBabaYagaVideo(anchorGroup) {
+  const video = document.createElement('video');
+  video.src = babaYagaVideoUrl;
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+
+  const texture = new THREE.VideoTexture(video);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 9 / 16),
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, toneMapped: false }),
   );
-  ring.position.set(0.02, 0.08, 0.035);
-  magic.add(ring);
+  plane.renderOrder = 1;
+  anchorGroup.add(plane);
 
-  const motes = [];
-  for (let index = 0; index < 12; index += 1) {
-    const mote = new THREE.Mesh(
-      new THREE.CircleGeometry(0.024 + (index % 3) * 0.007, 14),
-      new THREE.MeshBasicMaterial({ color: index % 2 ? 0xe0f0d7 : 0xf2ddbd, transparent: true, opacity: 0.92, side: THREE.DoubleSide }),
-    );
-    const angle = (Math.PI * 2 * index) / 12;
-    mote.position.set(Math.cos(angle) * 0.25, Math.sin(angle) * 0.16 + 0.03, 0.05);
-    magic.add(mote);
-    motes.push({ mote, angle, offset: index * 0.58 });
-  }
-
-  anchorGroup.add(magic);
-  return (time) => {
-    const t = time * 0.001;
-    ring.rotation.z = t * 0.72;
-    motes.forEach(({ mote, angle, offset }) => {
-      const radius = 0.23 + Math.sin(t * 2.1 + offset) * 0.03;
-      mote.position.x = Math.cos(angle + t * 0.4) * radius;
-      mote.position.y = Math.sin(angle + t * 0.4) * (0.16 + Math.cos(t + offset) * 0.02) + 0.03;
-      mote.rotation.z = -t;
-    });
+  return {
+    play() {
+      video.play().catch(() => {});
+    },
+    pause() {
+      video.pause();
+    },
+    dispose() {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      texture.dispose();
+      plane.geometry.dispose();
+      plane.material.dispose();
+    },
   };
 }
 
-function showRecognition(isFound) {
+function showRecognition(isFound, videoOverlay) {
   $('#scan-prompt').textContent = isFound ? 'Изображение найдено' : 'Наведите камеру на иллюстрацию';
   $('.scan-frame').classList.toggle('is-found', isFound);
+  $('#character-info').hidden = !isFound;
+  if (isFound) videoOverlay?.play();
+  else videoOverlay?.pause();
 }
 
 async function startAr() {
@@ -191,12 +204,12 @@ async function startAr() {
     });
     const { renderer, scene, camera } = mindarThree;
     const anchor = mindarThree.addAnchor(0);
-    const updateMagic = createMagic(anchor.group);
-    anchor.onTargetFound = () => showRecognition(true);
-    anchor.onTargetLost = () => showRecognition(false);
+    const videoOverlay = createBabaYagaVideo(anchor.group);
+    anchor.onTargetFound = () => showRecognition(true, videoOverlay);
+    anchor.onTargetLost = () => showRecognition(false, videoOverlay);
     await mindarThree.start();
-    state.ar = { mindarThree, renderer };
-    renderer.setAnimationLoop((time) => { updateMagic(time); renderer.render(scene, camera); });
+    state.ar = { mindarThree, renderer, videoOverlay };
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
   } catch (error) {
     console.error(error);
     prompt.textContent = error.message || 'Не удалось запустить AR.';
@@ -208,10 +221,12 @@ function stopAr() {
   if (state.ar) {
     state.ar.renderer.setAnimationLoop(null);
     state.ar.mindarThree.stop();
+    state.ar.videoOverlay.dispose();
     state.ar = null;
   }
   $('#ar-stage').replaceChildren();
   $('#ar-view').hidden = true;
+  $('#character-info').hidden = true;
   $('#ar-disclaimer').textContent = 'Камера используется только для распознавания иллюстрации';
 }
 
