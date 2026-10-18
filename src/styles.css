@@ -6,9 +6,8 @@ button { cursor: pointer; }
 button:focus-visible, a:focus-visible { outline: 3px solid #f2ddbd; outline-offset: 3px; }
 .app-shell { min-height: 100vh; max-width: 640px; margin: 0 auto; background: #16697a; }
 .screen { min-height: 100vh; padding: max(24px, env(safe-area-inset-top)) 22px max(32px, env(safe-area-inset-bottom)); }
-.topbar { display: flex; justify-content: space-between; align-items: center; min-height: 34px; }
-.brand { display: flex; gap: 8px; align-items: center; font-weight: 700; font-size: 15px; letter-spacing: -.015em; }
-.brand__mark { color: #f2ddbd; }.topbar__label { color: #d8edf0; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.topbar { display: flex; justify-content: center; align-items: center; min-height: 34px; }
+.site-title { margin: 0; color: #f7f2e9; font-family: Georgia, serif; font-size: 18px; font-weight: 700; letter-spacing: -.03em; }
 .hero { padding: 66px 0 56px; max-width: 500px; }.eyebrow { margin: 0 0 13px; color: #dcecec; text-transform: uppercase; letter-spacing: .13em; font-size: 10px; font-weight: 700; }
 h1, h2, p { margin-top: 0; } h1, h2 { font-family: Georgia, serif; letter-spacing: -.045em; line-height: .97; }
 h1 { font-size: clamp(51px, 14.5vw, 83px); margin: 0 0 24px; } h1 em { color: #f2ddbd; font-weight: 400; }

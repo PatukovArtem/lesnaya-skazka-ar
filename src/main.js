@@ -15,8 +15,7 @@ app.innerHTML = `
   <main class="app-shell">
     <section class="screen screen--home">
       <header class="topbar">
-        <div class="brand"><span class="brand__mark">✦</span><span>Живая карта</span></div>
-        <span class="topbar__label">Карта-путеводитель</span>
+        <p class="site-title">Лесная сказка</p>
       </header>
 
       <div class="hero">
@@ -54,7 +53,7 @@ app.innerHTML = `
       <div class="ar-ui">
         <header class="ar-ui__header">
           <button class="round-button" id="close-ar" aria-label="Закрыть камеру">×</button>
-          <span>Живая карта</span>
+          <span>Лесная сказка</span>
         </header>
         <p class="scan-prompt" id="scan-prompt">Подготовка камеры…</p>
         <div class="scan-frame" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
