@@ -1,6 +1,7 @@
 import './styles.css';
 
 const markerUrl = '/markers/baba-yaga-zimnyaya-izba.png';
+const markerMaxDimension = 640;
 let THREE = null;
 
 const state = {
@@ -33,7 +34,7 @@ app.innerHTML = `
         <ol class="steps">
           <li>
             <span>01</span>
-            <div><strong>Откройте иллюстрацию</strong><p>Для проверки можно <a href="${markerUrl}" target="_blank" rel="noreferrer">открыть картинку Бабы Яги</a> на другом экране или распечатать её.</p></div>
+            <div><strong>Найдите иллюстрацию</strong><p>Выберите сказочную картинку на карте, которую хотите оживить.</p></div>
           </li>
           <li>
             <span>02</span>
@@ -44,12 +45,6 @@ app.innerHTML = `
             <div><strong>Наведите на картинку</strong><p>Держите изображение внутри рамки — приложение узнает его и запустит анимацию.</p></div>
           </li>
         </ol>
-      </section>
-      <section class="test-scene" aria-labelledby="test-scene-title">
-        <p class="eyebrow">Пробник распознавания</p>
-        <h2 id="test-scene-title">Баба Яга у зимней избы</h2>
-        <p>На заснеженной опушке Баба Яга прислушивается к лесу. Метла уже чувствует, куда приведёт следующая тропинка, — осталось лишь навести на иллюстрацию камеру.</p>
-        <a class="test-scene__link" href="${markerUrl}" target="_blank" rel="noreferrer">Открыть картинку для распознавания ↗</a>
       </section>
       <p class="privacy-note">Видеопоток не сохраняется и используется только для распознавания изображения.</p>
     </section>
@@ -91,13 +86,26 @@ function loadImage(source) {
   });
 }
 
+async function prepareMarkerImage(source) {
+  const image = await loadImage(source);
+  const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
+  if (largestSide <= markerMaxDimension) return image;
+
+  const scale = markerMaxDimension / largestSide;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(image.naturalWidth * scale);
+  canvas.height = Math.round(image.naturalHeight * scale);
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
 async function compileTarget(source, statusElement) {
   await ensureArRuntime();
   if (!window.MINDAR?.IMAGE?.Compiler) {
     throw new Error('AR-движок не загрузился. Проверьте подключение к интернету и повторите попытку.');
   }
   statusElement.textContent = 'Готовлю иллюстрацию… 0%';
-  const image = await loadImage(source);
+  const image = await prepareMarkerImage(source);
   const compiler = new window.MINDAR.IMAGE.Compiler();
   await compiler.compileImageTargets([image], (progress) => {
     statusElement.textContent = `Готовлю иллюстрацию… ${Math.round(progress)}%`;
@@ -167,9 +175,13 @@ async function startAr() {
   prompt.textContent = 'Подготовка камеры…';
 
   try {
-    await ensureArRuntime();
-    await requestMaxCameraPermission();
-    const targetUrl = state.targetUrl || await compileTarget(markerUrl, prompt);
+    const runtime = ensureArRuntime();
+    const permission = requestMaxCameraPermission();
+    await runtime;
+    const target = state.targetUrl
+      ? Promise.resolve(state.targetUrl)
+      : compileTarget(markerUrl, prompt);
+    const [, targetUrl] = await Promise.all([permission, target]);
     prompt.textContent = 'Запускаю распознавание…';
 
     const MindARThree = window.MINDAR.IMAGE.MindARThree;
@@ -203,6 +215,20 @@ function stopAr() {
   $('#ar-disclaimer').textContent = 'Камера используется только для распознавания иллюстрации';
 }
 
+function warmArRuntime() {
+  const warmup = () => {
+    ensureArRuntime().catch(() => {});
+    loadImage(markerUrl).catch(() => {});
+  };
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(warmup, { timeout: 2500 });
+  } else {
+    window.setTimeout(warmup, 1200);
+  }
+}
+
 $('#start-ar').addEventListener('click', startAr);
 $('#close-ar').addEventListener('click', stopAr);
 window.addEventListener('beforeunload', stopAr);
+warmArRuntime();
