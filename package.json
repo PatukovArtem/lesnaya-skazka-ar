@@ -1,0 +1,18 @@
+{
+  "name": "max-ar-living-map",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "mind-ar-ts": "^0.5.7",
+    "three": "0.161.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.18"
+  }
+}

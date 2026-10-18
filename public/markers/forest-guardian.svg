@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-labelledby="title description">
+  <title id="title">Лесной хранитель — маркер Живой карты</title>
+  <desc id="description">Иллюстрация с деревом-хранителем, луной, горами и светящимися рунами.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0d1d3d"/>
+      <stop offset="0.52" stop-color="#193c61"/>
+      <stop offset="1" stop-color="#3b1f55"/>
+    </linearGradient>
+    <radialGradient id="moon"><stop stop-color="#fff6c9"/><stop offset="0.45" stop-color="#f7d87d"/><stop offset="1" stop-color="#d18a49"/></radialGradient>
+    <linearGradient id="tree" x1="0" x2="1"><stop stop-color="#241a2b"/><stop offset="0.5" stop-color="#523752"/><stop offset="1" stop-color="#1c1829"/></linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="dots" width="55" height="55" patternUnits="userSpaceOnUse"><circle cx="9" cy="14" r="1.5" fill="#d6dcff" opacity=".7"/><circle cx="38" cy="28" r="1" fill="#f8de9e" opacity=".55"/><circle cx="24" cy="45" r=".8" fill="#fff" opacity=".6"/></pattern>
+  </defs>
+  <rect width="1200" height="900" fill="url(#sky)"/>
+  <rect width="1200" height="900" fill="url(#dots)"/>
+  <circle cx="905" cy="195" r="113" fill="url(#moon)" filter="url(#glow)"/>
+  <path d="M0 500L130 348l88 83 124-165 114 158 151-218 139 205 131-115 183 227V900H0z" fill="#142843" opacity=".86"/>
+  <path d="M0 601l143-116 92 88 124-120 126 101 133-170 110 147 122-76 190 130v315H0z" fill="#0d2032"/>
+  <path d="M0 697c167-97 250-50 354-15 178 59 250-58 417-42 147 13 240 122 429 14v246H0z" fill="#091925"/>
+  <g stroke="#c8975d" fill="none" opacity=".85">
+    <path d="M83 103h104v49H83zM1013 707h119v52h-119z"/>
+    <path d="M111 127h48M87 128h-18M1047 734h52M1104 734h19"/>
+  </g>
+  <g transform="translate(551 471)">
+    <path d="M-28 346C-6 178-35 55-162-211c-79-164-171-186-198-275 96 54 165 103 229 207-25-113-75-212-180-287 150 32 247 123 289 258 11-159-23-257-118-369 128 107 184 214 172 385 64-110 145-190 270-231-118 95-187 186-223 305 72-96 152-135 259-155-135 90-190 209-216 371 51-54 103-82 183-89-90 68-135 143-137 256 2 80 10 142 27 185z" fill="url(#tree)" stroke="#78587b" stroke-width="9"/>
+    <path d="M-29 337C-9 130 35-56 145-268M-15 206C-76 64-149-96-275-210M-24 50C-76-101-142-209-220-279M22 162C104 48 187-49 300-103M18 259C114 200 208 186 313 221" fill="none" stroke="#a2779b" stroke-width="14" stroke-linecap="round" opacity=".7"/>
+    <path d="M-36 349c2-68 9-123 22-166M-13 347c-1-77-11-139-31-185" stroke="#e8b96f" stroke-width="5" opacity=".7"/>
+  </g>
+  <g fill="#dffbc3" filter="url(#glow)">
+    <circle cx="466" cy="291" r="9"/><circle cx="598" cy="185" r="7"/><circle cx="725" cy="267" r="10"/><circle cx="818" cy="392" r="6"/><circle cx="329" cy="463" r="7"/><circle cx="869" cy="528" r="9"/><circle cx="417" cy="622" r="8"/>
+  </g>
+  <g transform="translate(600 763)" fill="#f7d587" font-family="Georgia, serif" text-anchor="middle">
+    <text font-size="47" letter-spacing="9">ЛЕСНОЙ ХРАНИТЕЛЬ</text>
+    <text y="45" font-family="Arial, sans-serif" font-size="20" letter-spacing="5" fill="#c1d8c3">ЖИВАЯ КАРТА · 01</text>
+  </g>
+  <g stroke="#f7d587" stroke-width="4" fill="none" opacity=".92">
+    <circle cx="113" cy="777" r="34"/><path d="M96 777h34M113 760v34M101 765l24 24M125 765l-24 24"/>
+    <circle cx="1087" cy="777" r="34"/><path d="M1070 777h34M1087 760v34M1075 765l24 24M1099 765l-24 24"/>
+  </g>
+</svg>
