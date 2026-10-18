@@ -5,10 +5,7 @@ let THREE = null;
 
 const state = {
   ar: null,
-  animationFrame: null,
   targetUrl: null,
-  compiling: false,
-  activeScreen: 'home',
   arRuntime: null,
 };
 
@@ -16,83 +13,54 @@ const app = document.querySelector('#app');
 
 app.innerHTML = `
   <main class="app-shell">
-    <section class="screen screen--home" data-screen="home">
+    <section class="screen screen--home">
       <header class="topbar">
         <div class="brand"><span class="brand__mark">✦</span><span>Живая карта</span></div>
-        <span class="beta">AR · прототип</span>
+        <span class="topbar__label">Карта-путеводитель</span>
       </header>
 
       <div class="hero">
-        <p class="eyebrow">Карта, которая отвечает</p>
+        <p class="eyebrow">История начинается рядом</p>
         <h1>Оживите<br /><em>историю</em></h1>
-        <p class="hero__lead">Наведите камеру на иллюстрацию — и Лесной хранитель появится прямо на карте.</p>
+        <p class="hero__lead">Наведите камеру на иллюстрацию на карте — и она начнёт двигаться прямо на экране.</p>
         <button class="button button--primary" id="start-ar">Открыть камеру <span>↗</span></button>
       </div>
 
-      <div class="orbit orbit--one"></div><div class="orbit orbit--two"></div>
-
-      <section class="marker-card" aria-labelledby="marker-title">
-        <div class="marker-card__image"><img src="${markerUrl}" alt="Иллюстрация Лесной хранитель для теста AR" /></div>
-        <div class="marker-card__body">
-          <div><p class="marker-card__kicker">Тестовый маркер · 01</p><h2 id="marker-title">Лесной хранитель</h2></div>
-          <p>Откройте иллюстрацию на втором экране или распечатайте её, затем наведите камеру.</p>
-          <div class="marker-card__actions">
-            <a class="text-action" href="${markerUrl}" download="lesnoy-hranitel.svg">Скачать маркер ↓</a>
-            <button class="text-action" id="open-guide">Как это работает</button>
-          </div>
+      <section class="how-to" aria-labelledby="how-to-title">
+        <div class="how-to__heading">
+          <p class="eyebrow">Как играть</p>
+          <h2 id="how-to-title">Три простых шага</h2>
         </div>
-      </section>
-
-      <nav class="bottom-nav" aria-label="Навигация">
-        <button class="bottom-nav__item is-active" data-route="home"><span>◈</span>Карта</button>
-        <button class="bottom-nav__item" data-route="guide"><span>◌</span>Как играть</button>
-        <button class="bottom-nav__item" data-route="admin"><span>⌘</span>Админ</button>
-      </nav>
-    </section>
-
-    <section class="screen screen--guide" data-screen="guide" hidden>
-      <header class="topbar"><button class="back" data-route="home">←</button><div class="brand">Как оживает карта</div></header>
-      <div class="content-page">
-        <p class="eyebrow">Инструкция</p><h2>Никаких QR‑кодов</h2>
         <ol class="steps">
-          <li><span>1</span><div><strong>Откройте маркер</strong><p>Покажите «Лесного хранителя» на другом устройстве или распечатайте.</p></div></li>
-          <li><span>2</span><div><strong>Разрешите камеру</strong><p>Доступ нужен только во время AR-сеанса. Видеопоток никуда не отправляется.</p></div></li>
-          <li><span>3</span><div><strong>Держите картинку в рамке</strong><p>Когда приложение узнает иллюстрацию, над ней появятся световые руны.</p></div></li>
+          <li>
+            <span>01</span>
+            <div><strong>Откройте иллюстрацию</strong><p>Для проверки можно <a href="${markerUrl}" target="_blank" rel="noreferrer">показать тестовый маркер</a> на другом экране или распечатать его.</p></div>
+          </li>
+          <li>
+            <span>02</span>
+            <div><strong>Включите камеру</strong><p>Нажмите кнопку выше и разрешите доступ только на время AR-сеанса.</p></div>
+          </li>
+          <li>
+            <span>03</span>
+            <div><strong>Наведите на картинку</strong><p>Держите изображение внутри рамки — приложение узнает его и запустит анимацию.</p></div>
+          </li>
         </ol>
-        <button class="button button--primary" id="guide-start-ar">Начать AR-сеанс <span>↗</span></button>
-      </div>
-    </section>
-
-    <section class="screen screen--admin" data-screen="admin" hidden>
-      <header class="topbar"><button class="back" data-route="home">←</button><div class="brand">Панель администратора</div></header>
-      <div class="content-page">
-        <p class="eyebrow">Макет следующей итерации</p><h2>Добавление живой точки</h2>
-        <div class="admin-note"><span>⌘</span><p>В MAX эта панель будет открываться по команде <code>/admin</code> только для разрешённых администраторов.</p></div>
-        <label class="upload-tile" for="marker-upload"><input id="marker-upload" type="file" accept="image/*" /><span>＋</span><strong>Загрузить иллюстрацию‑маркер</strong><small>PNG, JPG или SVG</small></label>
-        <div class="form-preview" id="upload-preview" hidden></div>
-        <button class="button button--secondary" id="compile-upload" disabled>Подготовить распознавание</button>
-        <p class="fineprint" id="admin-status">Демо хранит данные только в браузере. Серверное сохранение и загрузка через бота — следующий этап.</p>
-      </div>
+      </section>
+      <p class="privacy-note">Видеопоток не сохраняется и используется только для распознавания изображения.</p>
     </section>
 
     <section class="ar-view" id="ar-view" aria-live="polite" hidden>
       <div class="ar-stage" id="ar-stage"></div>
       <div class="ar-ui">
-        <header class="ar-ui__header"><button class="round-button" id="close-ar" aria-label="Закрыть камеру">×</button><span class="ar-ui__title">Лесной хранитель</span><span class="camera-dot">●</span></header>
-        <div class="scan-frame"><i></i><i></i><i></i><i></i><b></b></div>
-        <p class="scan-prompt" id="scan-prompt">Ищу иллюстрацию…</p>
-        <button class="found-card" id="found-card" hidden><span class="found-card__icon">✦</span><span><small>Найдено</small><strong>Лесной хранитель</strong></span><span>→</span></button>
-        <div class="ar-disclaimer" id="ar-disclaimer">Камера используется только для распознавания иллюстрации</div>
+        <header class="ar-ui__header">
+          <button class="round-button" id="close-ar" aria-label="Закрыть камеру">×</button>
+          <span>Живая карта</span>
+        </header>
+        <p class="scan-prompt" id="scan-prompt">Подготовка камеры…</p>
+        <div class="scan-frame" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+        <p class="ar-disclaimer" id="ar-disclaimer">Камера используется только для распознавания иллюстрации</p>
       </div>
     </section>
-
-    <dialog class="info-dialog" id="info-dialog">
-      <button class="dialog-close" id="close-info" aria-label="Закрыть">×</button>
-      <div class="dialog-icon">✦</div><p class="eyebrow">Найдена точка · 01</p><h2>Лесной хранитель</h2>
-      <p>Древо просыпается, когда путешественник находит путь через туманный перевал. Его свет указывает дорогу к следующей главе карты.</p>
-      <div class="dialog-fact"><span>В награду</span><strong>Открыта история «Северная тропа»</strong></div>
-      <button class="button button--primary" id="close-info-button">Продолжить путь</button>
-    </dialog>
   </main>
 `;
 
@@ -109,16 +77,6 @@ async function ensureArRuntime() {
   await state.arRuntime;
 }
 
-function setScreen(name) {
-  state.activeScreen = name;
-  document.querySelectorAll('.screen').forEach((screen) => {
-    screen.hidden = screen.dataset.screen !== name;
-  });
-  document.querySelectorAll('[data-route]').forEach((button) => {
-    button.classList.toggle('is-active', button.dataset.route === name);
-  });
-}
-
 function loadImage(source) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -133,17 +91,15 @@ async function compileTarget(source, statusElement) {
   if (!window.MINDAR?.IMAGE?.Compiler) {
     throw new Error('AR-движок не загрузился. Проверьте подключение к интернету и повторите попытку.');
   }
-  state.compiling = true;
-  statusElement.textContent = 'Готовлю изображение для распознавания… 0%';
+  statusElement.textContent = 'Готовлю иллюстрацию… 0%';
   const image = await loadImage(source);
   const compiler = new window.MINDAR.IMAGE.Compiler();
   await compiler.compileImageTargets([image], (progress) => {
-    statusElement.textContent = `Готовлю изображение для распознавания… ${Math.round(progress)}%`;
+    statusElement.textContent = `Готовлю иллюстрацию… ${Math.round(progress)}%`;
   });
   const data = compiler.exportData();
   if (state.targetUrl) URL.revokeObjectURL(state.targetUrl);
   state.targetUrl = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
-  state.compiling = false;
   return state.targetUrl;
 }
 
@@ -161,47 +117,38 @@ function createMagic(anchorGroup) {
   const magic = new THREE.Group();
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.14, 0.17, 48),
-    new THREE.MeshBasicMaterial({ color: 0xffd88b, transparent: true, opacity: 0.87, side: THREE.DoubleSide }),
+    new THREE.MeshBasicMaterial({ color: 0xf2ddbd, transparent: true, opacity: 0.86, side: THREE.DoubleSide }),
   );
   ring.position.set(0.02, 0.08, 0.035);
   magic.add(ring);
 
-  const runes = [];
+  const motes = [];
   for (let index = 0; index < 12; index += 1) {
-    const dot = new THREE.Mesh(
+    const mote = new THREE.Mesh(
       new THREE.CircleGeometry(0.024 + (index % 3) * 0.007, 14),
-      new THREE.MeshBasicMaterial({ color: index % 2 ? 0xd5ffb1 : 0xffe1a7, transparent: true, opacity: 0.95, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: index % 2 ? 0xe0f0d7 : 0xf2ddbd, transparent: true, opacity: 0.92, side: THREE.DoubleSide }),
     );
     const angle = (Math.PI * 2 * index) / 12;
-    dot.position.set(Math.cos(angle) * 0.25, Math.sin(angle) * 0.16 + 0.03, 0.05);
-    magic.add(dot);
-    runes.push({ dot, angle, offset: index * 0.58 });
+    mote.position.set(Math.cos(angle) * 0.25, Math.sin(angle) * 0.16 + 0.03, 0.05);
+    magic.add(mote);
+    motes.push({ mote, angle, offset: index * 0.58 });
   }
 
-  const halo = new THREE.Mesh(
-    new THREE.CircleGeometry(0.31, 48),
-    new THREE.MeshBasicMaterial({ color: 0x8affbe, transparent: true, opacity: 0.1, side: THREE.DoubleSide }),
-  );
-  halo.position.z = 0.012;
-  magic.add(halo);
   anchorGroup.add(magic);
-
   return (time) => {
     const t = time * 0.001;
-    ring.rotation.z = t * 0.85;
-    halo.scale.setScalar(0.95 + Math.sin(t * 3) * 0.11);
-    runes.forEach(({ dot, angle, offset }) => {
-      const radius = 0.23 + Math.sin(t * 2.1 + offset) * 0.035;
-      dot.position.x = Math.cos(angle + t * 0.45) * radius;
-      dot.position.y = Math.sin(angle + t * 0.45) * (0.16 + Math.cos(t + offset) * 0.025) + 0.03;
-      dot.rotation.z = -t;
+    ring.rotation.z = t * 0.72;
+    motes.forEach(({ mote, angle, offset }) => {
+      const radius = 0.23 + Math.sin(t * 2.1 + offset) * 0.03;
+      mote.position.x = Math.cos(angle + t * 0.4) * radius;
+      mote.position.y = Math.sin(angle + t * 0.4) * (0.16 + Math.cos(t + offset) * 0.02) + 0.03;
+      mote.rotation.z = -t;
     });
   };
 }
 
 function showRecognition(isFound) {
-  $('#scan-prompt').textContent = isFound ? 'Лесной хранитель проснулся' : 'Ищу иллюстрацию…';
-  $('#found-card').hidden = !isFound;
+  $('#scan-prompt').textContent = isFound ? 'Изображение найдено' : 'Наведите камеру на иллюстрацию';
   $('.scan-frame').classList.toggle('is-found', isFound);
 }
 
@@ -212,7 +159,7 @@ async function startAr() {
 
   arView.hidden = false;
   showRecognition(false);
-  prompt.textContent = 'Готовлю камеру…';
+  prompt.textContent = 'Подготовка камеры…';
 
   try {
     await ensureArRuntime();
@@ -222,15 +169,8 @@ async function startAr() {
 
     const MindARThree = window.MINDAR.IMAGE.MindARThree;
     const mindarThree = new MindARThree({
-      container: $('#ar-stage'),
-      imageTargetSrc: targetUrl,
-      uiLoading: 'no',
-      uiScanning: 'no',
-      uiError: 'no',
-      filterMinCF: 0.001,
-      filterBeta: 1000,
-      warmupTolerance: 3,
-      missTolerance: 6,
+      container: $('#ar-stage'), imageTargetSrc: targetUrl, uiLoading: 'no', uiScanning: 'no', uiError: 'no',
+      filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
     });
     const { renderer, scene, camera } = mindarThree;
     const anchor = mindarThree.addAnchor(0);
@@ -238,12 +178,8 @@ async function startAr() {
     anchor.onTargetFound = () => showRecognition(true);
     anchor.onTargetLost = () => showRecognition(false);
     await mindarThree.start();
-
     state.ar = { mindarThree, renderer };
-    renderer.setAnimationLoop((time) => {
-      updateMagic(time);
-      renderer.render(scene, camera);
-    });
+    renderer.setAnimationLoop((time) => { updateMagic(time); renderer.render(scene, camera); });
   } catch (error) {
     console.error(error);
     prompt.textContent = error.message || 'Не удалось запустить AR.';
@@ -262,62 +198,6 @@ function stopAr() {
   $('#ar-disclaimer').textContent = 'Камера используется только для распознавания иллюстрации';
 }
 
-function openInfo() {
-  const dialog = $('#info-dialog');
-  if (typeof dialog.showModal === 'function') dialog.showModal();
-}
-
-function closeInfo() {
-  $('#info-dialog').close();
-}
-
-let uploadedMarker = null;
-
-function configureAdminUpload() {
-  const input = $('#marker-upload');
-  const preview = $('#upload-preview');
-  const compileButton = $('#compile-upload');
-  const adminStatus = $('#admin-status');
-
-  input.addEventListener('change', () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      adminStatus.textContent = 'Выберите изображение в формате PNG, JPG или SVG.';
-      return;
-    }
-    if (uploadedMarker) URL.revokeObjectURL(uploadedMarker);
-    uploadedMarker = URL.createObjectURL(file);
-    preview.hidden = false;
-    preview.innerHTML = `<img src="${uploadedMarker}" alt="Предпросмотр загруженного маркера" /><span>${file.name}</span>`;
-    compileButton.disabled = false;
-    adminStatus.textContent = 'Изображение готово. Подготовьте его для распознавания, затем откройте AR-камеру.';
-  });
-
-  compileButton.addEventListener('click', async () => {
-    if (!uploadedMarker || state.compiling) return;
-    try {
-      compileButton.disabled = true;
-      await compileTarget(uploadedMarker, adminStatus);
-      adminStatus.textContent = 'Маркер подготовлен локально. Нажмите «Открыть камеру» на главном экране для проверки.';
-      compileButton.textContent = 'Маркер готов ✓';
-    } catch (error) {
-      adminStatus.textContent = error.message || 'Подготовить маркер не удалось.';
-      compileButton.disabled = false;
-    }
-  });
-}
-
-document.querySelectorAll('[data-route]').forEach((button) => {
-  button.addEventListener('click', () => setScreen(button.dataset.route));
-});
 $('#start-ar').addEventListener('click', startAr);
-$('#guide-start-ar').addEventListener('click', startAr);
-$('#open-guide').addEventListener('click', () => setScreen('guide'));
 $('#close-ar').addEventListener('click', stopAr);
-$('#found-card').addEventListener('click', openInfo);
-$('#close-info').addEventListener('click', closeInfo);
-$('#close-info-button').addEventListener('click', closeInfo);
-configureAdminUpload();
-
 window.addEventListener('beforeunload', stopAr);
