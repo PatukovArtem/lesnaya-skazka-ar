@@ -292,7 +292,9 @@ async function startAr() {
     const MindARThree = window.MINDAR.IMAGE.MindARThree;
     const mindarThree = new MindARThree({
       container: $('#ar-stage'), imageTargetSrc: targetFileUrl, uiLoading: 'no', uiScanning: 'no', uiError: 'no',
-      maxTrack: 2, filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
+      // MindAR uses this value as the number of entries from the target file to inspect,
+      // not merely as a simultaneous-tracking limit. It must cover every illustration.
+      maxTrack: stories.length, filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
     });
     const { renderer, scene, camera } = mindarThree;
     const videoOverlays = stories.map((story, index) => {
