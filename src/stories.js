@@ -204,8 +204,37 @@ const markerById = {
   rusalka: '/markers/stories/rusalka.png',
 };
 
+const markerSizeById = {
+  'baba-yaga-yaroslavl': { width: 351, height: 351 },
+  'finist-yasny-sokol': { width: 366, height: 516 },
+  kutkh: { width: 397, height: 354 },
+  'konek-gorbunok': { width: 250, height: 254 },
+  louhi: { width: 403, height: 403 },
+  emelya: { width: 461, height: 461 },
+  chyskhaan: { width: 342, height: 504 },
+  sharvili: { width: 278, height: 330 },
+  'dobrynya-nikitich': { width: 296, height: 491 },
+  'baba-obyda': { width: 479, height: 495 },
+  'khel-muchi': { width: 318, height: 484 },
+  'alyosha-popovich': { width: 253, height: 470 },
+  'ilya-muromets': { width: 317, height: 473 },
+  'iki-morozovich': { width: 318, height: 472 },
+  'yakshamo-atya': { width: 318, height: 472 },
+  'gor-dada': { width: 318, height: 472 },
+  'yushto-kugyz': { width: 318, height: 472 },
+  'tol-babay': { width: 398, height: 598 },
+  'kodzyd-pol': { width: 398, height: 598 },
+  'yamal-iri': { width: 398, height: 598 },
+  'kysh-babay': { width: 398, height: 598 },
+  pakkayne: { width: 398, height: 598 },
+  'ues-dade': { width: 426, height: 622 },
+  'mun-kallsa': { width: 426, height: 622 },
+  rusalka: { width: 268, height: 495 },
+};
+
 stories.forEach((story) => {
   story.marker = markerById[story.id];
+  story.markerSize = markerSizeById[story.id];
 });
 
 export const storyById = Object.fromEntries(stories.map((story) => [story.id, story]));

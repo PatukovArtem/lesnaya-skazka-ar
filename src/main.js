@@ -9,6 +9,7 @@ const state = {
   arRuntime: null,
   activeStory: null,
   detectedStory: null,
+  visibleStories: new Set(),
 };
 
 const app = document.querySelector('#app');
@@ -187,12 +188,37 @@ function createStoryVideo(anchorGroup, story) {
   texture.magFilter = THREE.LinearFilter;
   texture.colorSpace = THREE.SRGBColorSpace;
 
+  const markerWidth = story.markerSize.width;
+  const markerHeight = story.markerSize.height;
   const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1, 9 / 16),
-    new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, toneMapped: false }),
+    new THREE.PlaneGeometry(1, markerHeight / markerWidth),
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, toneMapped: false, depthWrite: false }),
   );
   plane.renderOrder = 1;
+  plane.position.z = 0.01;
   anchorGroup.add(plane);
+
+  const fitVideoToMarker = () => {
+    const markerRatio = markerWidth / markerHeight;
+    const videoRatio = video.videoWidth / video.videoHeight;
+    if (!videoRatio) return;
+
+    texture.repeat.set(1, 1);
+    texture.offset.set(0, 0);
+
+    if (videoRatio > markerRatio) {
+      const visibleWidth = markerRatio / videoRatio;
+      texture.repeat.x = visibleWidth;
+      texture.offset.x = (1 - visibleWidth) / 2;
+    } else {
+      const visibleHeight = videoRatio / markerRatio;
+      texture.repeat.y = visibleHeight;
+      texture.offset.y = (1 - visibleHeight) / 2;
+    }
+    texture.needsUpdate = true;
+  };
+
+  video.addEventListener('loadedmetadata', fitVideoToMarker, { once: true });
 
   return {
     play() {
@@ -213,6 +239,7 @@ function createStoryVideo(anchorGroup, story) {
 }
 
 function resetRecognition() {
+  state.visibleStories = new Set();
   state.detectedStory = null;
   $('#scan-prompt').textContent = 'Наведите камеру на иллюстрацию';
   $('.scan-frame').classList.remove('is-found');
@@ -220,6 +247,7 @@ function resetRecognition() {
 }
 
 function showRecognition(story, videoOverlay) {
+  state.visibleStories.add(story.id);
   state.detectedStory = story;
   updateCharacterInfo(story);
   $('#scan-prompt').textContent = 'Изображение найдено';
@@ -230,7 +258,19 @@ function showRecognition(story, videoOverlay) {
 
 function hideRecognition(story, videoOverlay) {
   videoOverlay.pause();
-  if (state.detectedStory?.id === story.id) resetRecognition();
+  state.visibleStories.delete(story.id);
+
+  if (state.visibleStories.size === 0) {
+    resetRecognition();
+    return;
+  }
+
+  if (state.detectedStory?.id === story.id) {
+    const nextStoryId = [...state.visibleStories].pop();
+    const nextStory = storyById[nextStoryId];
+    state.detectedStory = nextStory;
+    updateCharacterInfo(nextStory);
+  }
 }
 
 async function startAr() {
@@ -252,7 +292,7 @@ async function startAr() {
     const MindARThree = window.MINDAR.IMAGE.MindARThree;
     const mindarThree = new MindARThree({
       container: $('#ar-stage'), imageTargetSrc: targetFileUrl, uiLoading: 'no', uiScanning: 'no', uiError: 'no',
-      maxTrack: 1, filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
+      maxTrack: 2, filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
     });
     const { renderer, scene, camera } = mindarThree;
     const videoOverlays = stories.map((story, index) => {
