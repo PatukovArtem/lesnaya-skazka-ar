@@ -176,4 +176,36 @@ export const stories = [
   },
 ];
 
+const markerById = {
+  'baba-yaga-yaroslavl': '/markers/stories/baba-yaga-yaroslavl.jpg',
+  'finist-yasny-sokol': '/markers/stories/finist-yasny-sokol.jpg',
+  kutkh: '/markers/stories/kutkh.jpg',
+  'konek-gorbunok': '/markers/stories/konek-gorbunok.jpg',
+  louhi: '/markers/stories/louhi.jpg',
+  emelya: '/markers/stories/emelya.jpg',
+  chyskhaan: '/markers/stories/chyskhaan.jpg',
+  sharvili: '/markers/stories/sharvili.png',
+  'dobrynya-nikitich': '/markers/stories/dobrynya-nikitich.jpg',
+  'baba-obyda': '/markers/stories/baba-obyda.jpg',
+  'khel-muchi': '/markers/stories/khel-muchi.png',
+  'alyosha-popovich': '/markers/stories/alyosha-popovich.jpg',
+  'ilya-muromets': '/markers/stories/ilya-muromets.jpg',
+  'iki-morozovich': '/markers/stories/iki-morozovich.png',
+  'yakshamo-atya': '/markers/stories/yakshamo-atya.png',
+  'gor-dada': '/markers/stories/gor-dada.png',
+  'yushto-kugyz': '/markers/stories/yushto-kugyz.png',
+  'tol-babay': '/markers/stories/tol-babay.png',
+  'kodzyd-pol': '/markers/stories/kodzyd-pol.png',
+  'yamal-iri': '/markers/stories/yamal-iri.png',
+  'kysh-babay': '/markers/stories/kysh-babay.png',
+  pakkayne: '/markers/stories/pakkayne.png',
+  'ues-dade': '/markers/stories/ues-dade.png',
+  'mun-kallsa': '/markers/stories/mun-kallsa.png',
+  rusalka: '/markers/stories/rusalka.png',
+};
+
+stories.forEach((story) => {
+  story.marker = markerById[story.id];
+});
+
 export const storyById = Object.fromEntries(stories.map((story) => [story.id, story]));

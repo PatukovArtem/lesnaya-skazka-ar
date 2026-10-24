@@ -1,16 +1,14 @@
 import './styles.css';
 import { stories, storyById } from './stories.js';
 
-const markerUrl = '/markers/baba-yaga-zimnyaya-izba.png';
-const markerStory = storyById['baba-yaga-yaroslavl'];
-const markerMaxDimension = 640;
+const targetFileUrl = '/markers/story-targets.mind';
 let THREE = null;
 
 const state = {
   ar: null,
-  targetUrl: null,
   arRuntime: null,
   activeStory: null,
+  detectedStory: null,
 };
 
 const app = document.querySelector('#app');
@@ -139,6 +137,7 @@ function openStory(story) {
   setText('#story-description', story.description);
   const video = $('#story-video');
   video.src = story.video;
+  video.poster = story.marker;
   video.load();
   $('#story-view').hidden = false;
   video.play().catch(() => {});
@@ -148,6 +147,7 @@ function closeStory() {
   const video = $('#story-video');
   video.pause();
   video.removeAttribute('src');
+  video.removeAttribute('poster');
   video.load();
   $('#story-view').hidden = true;
   state.activeStory = null;
@@ -162,45 +162,6 @@ async function ensureArRuntime() {
     })();
   }
   await state.arRuntime;
-}
-
-function loadImage(source) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('Не удалось загрузить иллюстрацию-маркер.'));
-    image.src = source;
-  });
-}
-
-async function prepareMarkerImage(source) {
-  const image = await loadImage(source);
-  const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
-  if (largestSide <= markerMaxDimension) return image;
-
-  const scale = markerMaxDimension / largestSide;
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(image.naturalWidth * scale);
-  canvas.height = Math.round(image.naturalHeight * scale);
-  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas;
-}
-
-async function compileTarget(source, statusElement) {
-  await ensureArRuntime();
-  if (!window.MINDAR?.IMAGE?.Compiler) {
-    throw new Error('AR-движок не загрузился. Проверьте подключение к интернету и повторите попытку.');
-  }
-  statusElement.textContent = 'Готовлю иллюстрацию… 0%';
-  const image = await prepareMarkerImage(source);
-  const compiler = new window.MINDAR.IMAGE.Compiler();
-  await compiler.compileImageTargets([image], (progress) => {
-    statusElement.textContent = `Готовлю иллюстрацию… ${Math.round(progress)}%`;
-  });
-  const data = compiler.exportData();
-  if (state.targetUrl) URL.revokeObjectURL(state.targetUrl);
-  state.targetUrl = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
-  return state.targetUrl;
 }
 
 async function requestMaxCameraPermission() {
@@ -219,7 +180,7 @@ function createStoryVideo(anchorGroup, story) {
   video.muted = true;
   video.loop = true;
   video.playsInline = true;
-  video.preload = 'auto';
+  video.preload = 'none';
 
   const texture = new THREE.VideoTexture(video);
   texture.minFilter = THREE.LinearFilter;
@@ -251,12 +212,25 @@ function createStoryVideo(anchorGroup, story) {
   };
 }
 
-function showRecognition(isFound, videoOverlay) {
-  $('#scan-prompt').textContent = isFound ? 'Изображение найдено' : 'Наведите камеру на иллюстрацию';
-  $('.scan-frame').classList.toggle('is-found', isFound);
-  $('#character-info').hidden = !isFound;
-  if (isFound) videoOverlay?.play();
-  else videoOverlay?.pause();
+function resetRecognition() {
+  state.detectedStory = null;
+  $('#scan-prompt').textContent = 'Наведите камеру на иллюстрацию';
+  $('.scan-frame').classList.remove('is-found');
+  $('#character-info').hidden = true;
+}
+
+function showRecognition(story, videoOverlay) {
+  state.detectedStory = story;
+  updateCharacterInfo(story);
+  $('#scan-prompt').textContent = 'Изображение найдено';
+  $('.scan-frame').classList.add('is-found');
+  $('#character-info').hidden = false;
+  videoOverlay.play();
+}
+
+function hideRecognition(story, videoOverlay) {
+  videoOverlay.pause();
+  if (state.detectedStory?.id === story.id) resetRecognition();
 }
 
 async function startAr() {
@@ -265,32 +239,31 @@ async function startAr() {
   if (state.ar) return;
 
   arView.hidden = false;
-  updateCharacterInfo(markerStory);
-  showRecognition(false);
+  resetRecognition();
   prompt.textContent = 'Подготовка камеры…';
 
   try {
     const runtime = ensureArRuntime();
     const permission = requestMaxCameraPermission();
     await runtime;
-    const target = state.targetUrl
-      ? Promise.resolve(state.targetUrl)
-      : compileTarget(markerUrl, prompt);
-    const [, targetUrl] = await Promise.all([permission, target]);
+    await permission;
     prompt.textContent = 'Запускаю распознавание…';
 
     const MindARThree = window.MINDAR.IMAGE.MindARThree;
     const mindarThree = new MindARThree({
-      container: $('#ar-stage'), imageTargetSrc: targetUrl, uiLoading: 'no', uiScanning: 'no', uiError: 'no',
-      filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
+      container: $('#ar-stage'), imageTargetSrc: targetFileUrl, uiLoading: 'no', uiScanning: 'no', uiError: 'no',
+      maxTrack: 1, filterMinCF: 0.001, filterBeta: 1000, warmupTolerance: 3, missTolerance: 6,
     });
     const { renderer, scene, camera } = mindarThree;
-    const anchor = mindarThree.addAnchor(0);
-    const videoOverlay = createStoryVideo(anchor.group, markerStory);
-    anchor.onTargetFound = () => showRecognition(true, videoOverlay);
-    anchor.onTargetLost = () => showRecognition(false, videoOverlay);
+    const videoOverlays = stories.map((story, index) => {
+      const anchor = mindarThree.addAnchor(index);
+      const videoOverlay = createStoryVideo(anchor.group, story);
+      anchor.onTargetFound = () => showRecognition(story, videoOverlay);
+      anchor.onTargetLost = () => hideRecognition(story, videoOverlay);
+      return videoOverlay;
+    });
     await mindarThree.start();
-    state.ar = { mindarThree, renderer, videoOverlay };
+    state.ar = { mindarThree, renderer, videoOverlays };
     renderer.setAnimationLoop(() => renderer.render(scene, camera));
   } catch (error) {
     console.error(error);
@@ -303,19 +276,19 @@ function stopAr() {
   if (state.ar) {
     state.ar.renderer.setAnimationLoop(null);
     state.ar.mindarThree.stop();
-    state.ar.videoOverlay.dispose();
+    state.ar.videoOverlays.forEach((videoOverlay) => videoOverlay.dispose());
     state.ar = null;
   }
   $('#ar-stage').replaceChildren();
   $('#ar-view').hidden = true;
-  $('#character-info').hidden = true;
+  resetRecognition();
   $('#ar-disclaimer').textContent = 'Камера используется только для распознавания иллюстрации';
 }
 
 function warmArRuntime() {
   const warmup = () => {
     ensureArRuntime().catch(() => {});
-    loadImage(markerUrl).catch(() => {});
+    fetch(targetFileUrl, { cache: 'force-cache' }).catch(() => {});
   };
 
   if ('requestIdleCallback' in window) {
@@ -326,7 +299,6 @@ function warmArRuntime() {
 }
 
 renderStoryList();
-updateCharacterInfo(markerStory);
 $('#start-ar').addEventListener('click', startAr);
 $('#close-ar').addEventListener('click', stopAr);
 $('#open-library').addEventListener('click', openLibrary);
