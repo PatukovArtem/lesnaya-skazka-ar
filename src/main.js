@@ -41,7 +41,7 @@ app.innerHTML = `
           </li>
           <li>
             <span>02</span>
-            <div><strong>Включите камеру</strong><p>Нажмите кнопку выше и разрешите доступ только на время AR-сеанса.</p></div>
+            <div><strong>Откройте камеру</strong><p>Нажмите кнопку выше, чтобы запустить распознавание в браузере.</p></div>
           </li>
           <li>
             <span>03</span>
@@ -122,16 +122,6 @@ async function ensureArRuntime() {
     })();
   }
   await state.arRuntime;
-}
-
-async function requestMaxCameraPermission() {
-  const manager = window.WebApp?.PermissionsManager;
-  if (!manager) return;
-  if (!manager.isInited) await manager.init();
-  const result = await manager.requestAccess(['camera'], 'Чтобы оживить иллюстрацию на карте');
-  if (!result?.camera?.appAccessGranted || !result?.camera?.systemAccessGranted) {
-    throw new Error('Доступ к камере не выдан. Включите его в настройках MAX и устройства.');
-  }
 }
 
 function createMagicDustTexture() {
@@ -407,9 +397,7 @@ async function startAr() {
 
   try {
     const runtime = ensureArRuntime();
-    const permission = requestMaxCameraPermission();
     await runtime;
-    await permission;
     if (sessionId !== state.arSession) return;
     prompt.textContent = 'Запускаю распознавание…';
 
@@ -445,7 +433,7 @@ async function startAr() {
     if (sessionId !== state.arSession) return;
     console.error(error);
     prompt.textContent = error.message || 'Не удалось запустить AR.';
-    $('#ar-disclaimer').textContent = 'Проверьте разрешение камеры и попробуйте ещё раз.';
+    $('#ar-disclaimer').textContent = 'Проверьте доступность камеры в браузере и попробуйте ещё раз.';
   } finally {
     if (sessionId === state.arSession) state.arStarting = false;
   }
