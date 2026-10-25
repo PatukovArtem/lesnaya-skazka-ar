@@ -7,7 +7,8 @@ let THREE = null;
 const state = {
   ar: null,
   arRuntime: null,
-  activeStory: null,
+  arStarting: false,
+  arSession: 0,
   detectedStory: null,
   visibleStories: new Set(),
 };
@@ -26,7 +27,6 @@ app.innerHTML = `
         <h1>Оживите<br /><em>историю</em></h1>
         <p class="hero__lead">Наведите камеру на иллюстрацию на карте — и она начнёт двигаться прямо на экране.</p>
         <button class="button button--primary" id="start-ar" type="button">Открыть камеру <span>↗</span></button>
-        <button class="library-trigger" id="open-library" type="button"><span>Герои карты</span><small>${stories.length} историй&nbsp; →</small></button>
       </div>
 
       <section class="how-to" aria-labelledby="how-to-title">
@@ -70,50 +70,14 @@ app.innerHTML = `
       </div>
     </section>
 
-    <section class="overlay-view library-view" id="library-view" aria-labelledby="library-title" hidden>
-      <header class="overlay-header">
-        <button class="round-button" id="close-library" type="button" aria-label="Закрыть каталог">×</button>
-        <span>Лесная сказка</span>
-      </header>
-      <div class="overlay-content">
-        <p class="eyebrow">Герои карты</p>
-        <h1 id="library-title">Легенды<br /><em>России</em></h1>
-        <p class="overlay-lead">Выберите героя, чтобы посмотреть его историю и анимацию.</p>
-        <div class="story-list" id="story-list"></div>
-      </div>
-    </section>
-
-    <section class="overlay-view story-view" id="story-view" aria-labelledby="story-title" hidden>
-      <header class="overlay-header">
-        <button class="round-button" id="close-story" type="button" aria-label="Вернуться к каталогу">←</button>
-        <span>Герои карты</span>
-      </header>
-      <div class="overlay-content story-content">
-        <video class="story-video" id="story-video" controls playsinline preload="metadata"></video>
-        <article class="story-copy">
-          <p class="eyebrow" id="story-region"></p>
-          <h1 id="story-title"></h1>
-          <p id="story-description"></p>
-        </article>
-      </div>
-    </section>
   </main>
 `;
 
 const $ = (selector) => document.querySelector(selector);
+let characterInfoHideTimer = null;
 
 function setText(selector, value) {
   $(selector).textContent = value;
-}
-
-function renderStoryList() {
-  $('#story-list').innerHTML = stories.map((story, index) => `
-    <button class="story-row" type="button" data-story-id="${story.id}">
-      <span>${String(index + 1).padStart(2, '0')}</span>
-      <div><strong>${story.title}</strong><small>${story.region}</small></div>
-      <i aria-hidden="true">↗</i>
-    </button>
-  `).join('');
 }
 
 function updateCharacterInfo(story) {
@@ -122,36 +86,31 @@ function updateCharacterInfo(story) {
   setText('#character-description', story.description);
 }
 
-function openLibrary() {
-  $('#library-view').hidden = false;
+function revealCharacterInfo() {
+  const info = $('#character-info');
+  window.clearTimeout(characterInfoHideTimer);
+  if (!info.hidden) {
+    info.classList.add('is-visible');
+    return;
+  }
+
+  info.hidden = false;
+  info.classList.remove('is-visible');
+  requestAnimationFrame(() => requestAnimationFrame(() => info.classList.add('is-visible')));
 }
 
-function closeLibrary() {
-  closeStory();
-  $('#library-view').hidden = true;
-}
+function concealCharacterInfo(immediately = false) {
+  const info = $('#character-info');
+  window.clearTimeout(characterInfoHideTimer);
+  info.classList.remove('is-visible');
+  if (immediately || info.hidden) {
+    info.hidden = true;
+    return;
+  }
 
-function openStory(story) {
-  state.activeStory = story;
-  setText('#story-region', story.region);
-  setText('#story-title', story.title);
-  setText('#story-description', story.description);
-  const video = $('#story-video');
-  video.src = story.video;
-  video.poster = story.marker;
-  video.load();
-  $('#story-view').hidden = false;
-  video.play().catch(() => {});
-}
-
-function closeStory() {
-  const video = $('#story-video');
-  video.pause();
-  video.removeAttribute('src');
-  video.removeAttribute('poster');
-  video.load();
-  $('#story-view').hidden = true;
-  state.activeStory = null;
+  characterInfoHideTimer = window.setTimeout(() => {
+    if (!info.classList.contains('is-visible')) info.hidden = true;
+  }, 420);
 }
 
 async function ensureArRuntime() {
@@ -404,7 +363,7 @@ function resetRecognition() {
   state.detectedStory = null;
   $('#scan-prompt').textContent = 'Наведите камеру на иллюстрацию';
   $('.scan-frame').classList.remove('is-found');
-  $('#character-info').hidden = true;
+  concealCharacterInfo();
 }
 
 function showRecognition(story, videoOverlay) {
@@ -413,7 +372,7 @@ function showRecognition(story, videoOverlay) {
   updateCharacterInfo(story);
   $('#scan-prompt').textContent = 'Изображение найдено';
   $('.scan-frame').classList.add('is-found');
-  $('#character-info').hidden = false;
+  revealCharacterInfo();
   videoOverlay.play();
 }
 
@@ -437,7 +396,10 @@ function hideRecognition(story, videoOverlay) {
 async function startAr() {
   const arView = $('#ar-view');
   const prompt = $('#scan-prompt');
-  if (state.ar) return;
+  if (state.ar || state.arStarting) return;
+  state.arStarting = true;
+  const sessionId = state.arSession + 1;
+  state.arSession = sessionId;
 
   arView.hidden = false;
   resetRecognition();
@@ -448,6 +410,7 @@ async function startAr() {
     const permission = requestMaxCameraPermission();
     await runtime;
     await permission;
+    if (sessionId !== state.arSession) return;
     prompt.textContent = 'Запускаю распознавание…';
 
     const MindARThree = window.MINDAR.IMAGE.MindARThree;
@@ -467,19 +430,30 @@ async function startAr() {
       return videoOverlay;
     });
     await mindarThree.start();
+    if (sessionId !== state.arSession) {
+      mindarThree.stop();
+      videoOverlays.forEach((videoOverlay) => videoOverlay.dispose());
+      dustTexture.dispose();
+      return;
+    }
     state.ar = { mindarThree, renderer, videoOverlays, dustTexture };
     renderer.setAnimationLoop((now) => {
       videoOverlays.forEach((videoOverlay) => videoOverlay.update(now));
       renderer.render(scene, camera);
     });
   } catch (error) {
+    if (sessionId !== state.arSession) return;
     console.error(error);
     prompt.textContent = error.message || 'Не удалось запустить AR.';
     $('#ar-disclaimer').textContent = 'Проверьте разрешение камеры и попробуйте ещё раз.';
+  } finally {
+    if (sessionId === state.arSession) state.arStarting = false;
   }
 }
 
 function stopAr() {
+  state.arSession += 1;
+  state.arStarting = false;
   if (state.ar) {
     state.ar.renderer.setAnimationLoop(null);
     state.ar.mindarThree.stop();
@@ -490,6 +464,7 @@ function stopAr() {
   $('#ar-stage').replaceChildren();
   $('#ar-view').hidden = true;
   resetRecognition();
+  concealCharacterInfo(true);
   $('#ar-disclaimer').textContent = 'Камера используется только для распознавания иллюстрации';
 }
 
@@ -506,15 +481,7 @@ function warmArRuntime() {
   }
 }
 
-renderStoryList();
 $('#start-ar').addEventListener('click', startAr);
 $('#close-ar').addEventListener('click', stopAr);
-$('#open-library').addEventListener('click', openLibrary);
-$('#close-library').addEventListener('click', closeLibrary);
-$('#close-story').addEventListener('click', closeStory);
-$('#story-list').addEventListener('click', (event) => {
-  const button = event.target.closest('[data-story-id]');
-  if (button) openStory(storyById[button.dataset.storyId]);
-});
 window.addEventListener('beforeunload', stopAr);
 warmArRuntime();
