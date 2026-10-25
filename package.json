@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "package:selectel": "npm run build && node scripts/prepare-selectel.mjs"
   },
   "dependencies": {
     "mind-ar-ts": "^0.5.7",
