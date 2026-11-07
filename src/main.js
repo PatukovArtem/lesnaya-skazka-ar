@@ -1,7 +1,8 @@
 import './styles.css';
 import { stories, storyById } from './stories.js';
 
-const targetFileUrl = '/markers/story-targets.mind';
+const assetUrl = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+const targetFileUrl = assetUrl('markers/story-targets.mind');
 let THREE = null;
 
 const state = {

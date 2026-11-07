@@ -232,8 +232,11 @@ const markerSizeById = {
   rusalka: { width: 268, height: 495 },
 };
 
+const assetUrl = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+
 stories.forEach((story) => {
-  story.marker = markerById[story.id];
+  story.video = assetUrl(story.video);
+  story.marker = assetUrl(markerById[story.id]);
   story.markerSize = markerSizeById[story.id];
 });
 
